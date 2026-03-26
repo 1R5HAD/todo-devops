@@ -1,44 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            background-color: #f4f4f4;
-        }
-        h1 { text-align: center; color: #333; }
-        form { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="text"] { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        ul { list-style: none; padding: 0; }
-        li { background: white; padding: 10px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .done { text-decoration: line-through; color: gray; }
-        a { margin-left: 10px; text-decoration: none; color: white; padding: 5px 10px; border-radius: 5px; }
-        .complete-btn { background-color: #007bff; }
-        .delete-btn { background-color: #dc3545; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow — To-Do App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── RESET & BASE ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22263a;
+      --border:    #2e3150;
+      --text:      #e8eaf6;
+      --muted:     #7b82a8;
+      --accent:    #6c63ff;
+      --accent-h:  #8b83ff;
+
+      --high:   #ff5370;
+      --medium: #ffb74d;
+      --low:    #69f0ae;
+
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── LAYOUT ───────────────────────────────────────── */
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ───────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--accent); }
+    header p {
+      color: var(--muted);
+      margin-top: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── STATS BAR ────────────────────────────────────── */
+    .stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-card .num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── ADD TASK FORM ────────────────────────────────── */
+    .add-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .add-form h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    select:focus {
+      border-color: var(--accent);
+    }
+    input[type="text"] { flex: 1; min-width: 180px; }
+
+    /* Fix date picker icon color in dark mode */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    select option { background: var(--surface2); }
+
+    .btn {
+      padding: 0.65rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-h); }
+
+    /* ── TASK LIST ────────────────────────────────────── */
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 0.75rem;
+    }
+
+    .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* ── TASK CARD ────────────────────────────────────── */
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: border-color 0.2s, opacity 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Colored left accent bar based on priority */
+    .task-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 12px 0 0 12px;
+    }
+    .task-card.priority-high::before   { background: var(--high); }
+    .task-card.priority-medium::before { background: var(--medium); }
+    .task-card.priority-low::before    { background: var(--low); }
+
+    .task-card.completed { opacity: 0.5; }
+    .task-card.completed .task-content { text-decoration: line-through; color: var(--muted); }
+
+    /* Complete toggle button */
+    .complete-btn {
+      width: 22px; height: 22px;
+      min-width: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+      margin-top: 2px;
+    }
+    .complete-btn:hover { border-color: var(--accent); }
+    .task-card.completed .complete-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .complete-btn svg { display: none; }
+    .task-card.completed .complete-btn svg { display: block; }
+
+    /* Task info */
+    .task-body { flex: 1; min-width: 0; }
+    .task-content {
+      font-size: 0.95rem;
+      font-weight: 500;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .badge-high   { background: rgba(255,83,112,0.15); color: var(--high); }
+    .badge-medium { background: rgba(255,183,77,0.15);  color: var(--medium); }
+    .badge-low    { background: rgba(105,240,174,0.15); color: var(--low); }
+
+    .due-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .due-date.overdue { color: var(--high); }
+
+    /* Delete button */
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+      display: flex; align-items: center;
+      margin-top: 1px;
+    }
+    .delete-btn:hover { color: var(--high); background: rgba(255,83,112,0.1); }
+
+    /* ── EMPTY STATE ──────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── RESPONSIVE ───────────────────────────────────── */
+    @media (max-width: 480px) {
+      .stats { gap: 0.5rem; }
+      .form-row { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
 </head>
 <body>
-    <h1>To-Do App</h1>
-    <form action="/add" method="post">
-        <input type="text" name="task" placeholder="Enter a task..." required>
-        <button type="submit">Add</button>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>Task<span>Flow</span></h1>
+    <p>Your personal productivity space</p>
+  </header>
+
+  <!-- Stats -->
+  {% set total     = tasks | length %}
+  {% set done      = tasks | selectattr('completed') | list | length %}
+  {% set remaining = total - done %}
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="num">{{ total }}</div>
+      <div class="label">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ remaining }}</div>
+      <div class="label">Pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ done }}</div>
+      <div class="label">Completed</div>
+    </div>
+  </div>
+
+  <!-- Add Task Form -->
+  <div class="add-form">
+    <h2>New Task</h2>
+    <form action="/add" method="POST">
+      <div class="form-row">
+        <input
+          type="text"
+          name="content"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          required
+        />
+        <select name="priority">
+          <option value="high">🔴 High</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+        <input type="date" name="due_date" />
+        <button type="submit" class="btn btn-primary">+ Add</button>
+      </div>
     </form>
-<ul>
-    {% for todo in todos %}
-    <li>
-        <span class="{{ 'done' if todo.done else '' }}">{{ todo.task }}</span>
-        <div>
-            <a class="complete-btn" href="/complete/{{ loop.index0 }}">✓</a>
-            <a class="delete-btn" href="/delete/{{ loop.index0 }}">✗</a>
+  </div>
+
+  <!-- Task List -->
+  {% if tasks %}
+    <p class="section-title">{{ total }} task{{ 's' if total != 1 }}</p>
+    <div class="task-list">
+      {% for task in tasks %}
+      <div class="task-card priority-{{ task.priority }} {% if task.completed %}completed{% endif %}">
+
+        <!-- Complete toggle -->
+        <a href="/complete/{{ task.id }}" style="text-decoration:none;">
+          <button class="complete-btn" title="Toggle complete">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6L5 9L10 3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </a>
+
+        <!-- Task info -->
+        <div class="task-body">
+          <div class="task-content">{{ task.content }}</div>
+          <div class="task-meta">
+            <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+            {% if task.due_date %}
+              <span class="due-date">
+                📅 {{ task.due_date }}
+              </span>
+            {% endif %}
+          </div>
         </div>
-    </li>
-    {% endfor %}
-</ul>
+
+        <!-- Delete -->
+        <a href="/delete/{{ task.id }}" style="text-decoration:none;"
+           onclick="return confirm('Delete this task?')">
+          <button class="delete-btn" title="Delete task">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14H6L5 6"></path>
+              <path d="M10 11v6M14 11v6"></path>
+              <path d="M9 6V4h6v2"></path>
+            </svg>
+          </button>
+        </a>
+
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="icon">✅</div>
+      <p>No tasks yet. Add one above to get started!</p>
+    </div>
+  {% endif %}
+
+</div>
 </body>
 </html>
