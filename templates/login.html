@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — TaskFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+      --border: #2e3150; --text: #e8eaf6; --muted: #7b82a8;
+      --accent: #6c63ff; --accent-h: #8b83ff; --high: #ff5370;
+      --radius: 12px;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .logo { text-align: center; margin-bottom: 2rem; }
+    .logo h1 { font-size: 1.8rem; font-weight: 700; }
+    .logo h1 span { color: var(--accent); }
+    .logo p { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+
+    .flash {
+      background: rgba(255,83,112,0.1);
+      border: 1px solid rgba(255,83,112,0.3);
+      color: var(--high);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+    }
+    input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.7rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 1.1rem;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 0.3rem;
+    }
+    .btn:hover { background: var(--accent-h); }
+    .btn:active { transform: scale(0.98); }
+
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <h1>Task<span>Flow</span></h1>
+    <p>Welcome back — sign in to your tasks</p>
+  </div>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">{{ messages[0] }}</div>
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="/login">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" placeholder="your username" autocomplete="username" required/>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required/>
+
+    <button type="submit" class="btn">Sign In</button>
+  </form>
+
+  <div class="footer">
+    Don't have an account? <a href="/signup">Sign up</a>
+  </div>
+</div>
+</body>
+</html>

@@ -6,9 +6,7 @@
   <title>TaskFlow — To-Do App</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    /* ── RESET & BASE ─────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:        #0f1117;
       --surface:   #1a1d27;
@@ -18,15 +16,12 @@
       --muted:     #7b82a8;
       --accent:    #6c63ff;
       --accent-h:  #8b83ff;
-
       --high:   #ff5370;
       --medium: #ffb74d;
       --low:    #69f0ae;
-
       --radius: 12px;
       --shadow: 0 4px 24px rgba(0,0,0,0.4);
     }
-
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
@@ -34,36 +29,49 @@
       min-height: 100vh;
       padding: 2rem 1rem;
     }
+    .container { max-width: 680px; margin: 0 auto; }
 
-    /* ── LAYOUT ───────────────────────────────────────── */
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-    }
-
-    /* ── HEADER ───────────────────────────────────────── */
+    /* ── HEADER ── */
     header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 2.5rem;
     }
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    header h1 span { color: var(--accent); }
-    header p {
-      color: var(--muted);
-      margin-top: 0.4rem;
-      font-size: 0.9rem;
-    }
+    .header-left h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
+    .header-left h1 span { color: var(--accent); }
+    .header-left p { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
 
-    /* ── STATS BAR ────────────────────────────────────── */
-    .stats {
+    .user-pill {
       display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
     }
+    .user-pill .avatar {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .user-pill span { font-size: 0.85rem; font-weight: 500; }
+    .user-pill a {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-decoration: none;
+      margin-left: 0.2rem;
+      transition: color 0.2s;
+    }
+    .user-pill a:hover { color: var(--high); }
+
+    /* ── STATS ── */
+    .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card {
       flex: 1;
       background: var(--surface);
@@ -72,20 +80,10 @@
       padding: 1rem;
       text-align: center;
     }
-    .stat-card .num {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-    .stat-card .label {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 2px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .stat-card .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .stat-card .label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ── ADD TASK FORM ────────────────────────────────── */
+    /* ── FORM ── */
     .add-form {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -94,24 +92,9 @@
       margin-bottom: 1.5rem;
       box-shadow: var(--shadow);
     }
-    .add-form h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    select {
+    .add-form h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    input[type="text"], input[type="date"], select {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -122,21 +105,10 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    input[type="text"]:focus,
-    input[type="date"]:focus,
-    select:focus {
-      border-color: var(--accent);
-    }
+    input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: var(--accent); }
     input[type="text"] { flex: 1; min-width: 180px; }
-
-    /* Fix date picker icon color in dark mode */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(0.7);
-      cursor: pointer;
-    }
-
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
     select option { background: var(--surface2); }
-
     .btn {
       padding: 0.65rem 1.4rem;
       border: none;
@@ -148,25 +120,12 @@
       transition: opacity 0.2s, transform 0.1s;
     }
     .btn:active { transform: scale(0.97); }
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
+    .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent-h); }
 
-    /* ── TASK LIST ────────────────────────────────────── */
-    .section-title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 0.75rem;
-    }
-
+    /* ── TASK LIST ── */
+    .section-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.75rem; }
     .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-    /* ── TASK CARD ────────────────────────────────────── */
     .task-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -175,11 +134,10 @@
       display: flex;
       align-items: flex-start;
       gap: 1rem;
-      transition: border-color 0.2s, opacity 0.2s;
       position: relative;
       overflow: hidden;
+      transition: border-color 0.2s, opacity 0.2s;
     }
-    /* Colored left accent bar based on priority */
     .task-card::before {
       content: '';
       position: absolute;
@@ -190,14 +148,11 @@
     .task-card.priority-high::before   { background: var(--high); }
     .task-card.priority-medium::before { background: var(--medium); }
     .task-card.priority-low::before    { background: var(--low); }
-
     .task-card.completed { opacity: 0.5; }
     .task-card.completed .task-content { text-decoration: line-through; color: var(--muted); }
 
-    /* Complete toggle button */
     .complete-btn {
-      width: 22px; height: 22px;
-      min-width: 22px;
+      width: 22px; height: 22px; min-width: 22px;
       border-radius: 50%;
       border: 2px solid var(--border);
       background: transparent;
@@ -207,52 +162,19 @@
       margin-top: 2px;
     }
     .complete-btn:hover { border-color: var(--accent); }
-    .task-card.completed .complete-btn {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
+    .task-card.completed .complete-btn { background: var(--accent); border-color: var(--accent); }
     .complete-btn svg { display: none; }
     .task-card.completed .complete-btn svg { display: block; }
 
-    /* Task info */
     .task-body { flex: 1; min-width: 0; }
-    .task-content {
-      font-size: 0.95rem;
-      font-weight: 500;
-      word-break: break-word;
-      line-height: 1.4;
-    }
-
-    .task-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-top: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 2px 8px;
-      border-radius: 20px;
-    }
+    .task-content { font-size: 0.95rem; font-weight: 500; word-break: break-word; line-height: 1.4; }
+    .task-meta { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .badge { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 20px; }
     .badge-high   { background: rgba(255,83,112,0.15); color: var(--high); }
     .badge-medium { background: rgba(255,183,77,0.15);  color: var(--medium); }
     .badge-low    { background: rgba(105,240,174,0.15); color: var(--low); }
+    .due-date { font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 3px; }
 
-    .due-date {
-      font-size: 0.75rem;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .due-date.overdue { color: var(--high); }
-
-    /* Delete button */
     .delete-btn {
       background: transparent;
       border: none;
@@ -266,17 +188,12 @@
     }
     .delete-btn:hover { color: var(--high); background: rgba(255,83,112,0.1); }
 
-    /* ── EMPTY STATE ──────────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--muted);
-    }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
     .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
     .empty-state p { font-size: 0.9rem; }
 
-    /* ── RESPONSIVE ───────────────────────────────────── */
-    @media (max-width: 480px) {
+    @media (max-width: 520px) {
+      header { flex-direction: column; align-items: flex-start; gap: 1rem; }
       .stats { gap: 0.5rem; }
       .form-row { flex-direction: column; }
       .btn { width: 100%; }
@@ -288,15 +205,21 @@
 
   <!-- Header -->
   <header>
-    <h1>Task<span>Flow</span></h1>
-    <p>Your personal productivity space</p>
+    <div class="header-left">
+      <h1>Task<span>Flow</span></h1>
+      <p>Your personal productivity space</p>
+    </div>
+    <div class="user-pill">
+      <div class="avatar">{{ current_user.username[0].upper() }}</div>
+      <span>{{ current_user.username }}</span>
+      <a href="/logout" title="Sign out">Sign out</a>
+    </div>
   </header>
 
   <!-- Stats -->
   {% set total     = tasks | length %}
   {% set done      = tasks | selectattr('completed') | list | length %}
   {% set remaining = total - done %}
-
   <div class="stats">
     <div class="stat-card">
       <div class="num">{{ total }}</div>
@@ -317,13 +240,7 @@
     <h2>New Task</h2>
     <form action="/add" method="POST">
       <div class="form-row">
-        <input
-          type="text"
-          name="content"
-          placeholder="What needs to be done?"
-          autocomplete="off"
-          required
-        />
+        <input type="text" name="content" placeholder="What needs to be done?" autocomplete="off" required/>
         <select name="priority">
           <option value="high">🔴 High</option>
           <option value="medium" selected>🟡 Medium</option>
@@ -341,8 +258,6 @@
     <div class="task-list">
       {% for task in tasks %}
       <div class="task-card priority-{{ task.priority }} {% if task.completed %}completed{% endif %}">
-
-        <!-- Complete toggle -->
         <a href="/complete/{{ task.id }}" style="text-decoration:none;">
           <button class="complete-btn" title="Toggle complete">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -350,23 +265,16 @@
             </svg>
           </button>
         </a>
-
-        <!-- Task info -->
         <div class="task-body">
           <div class="task-content">{{ task.content }}</div>
           <div class="task-meta">
             <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
             {% if task.due_date %}
-              <span class="due-date">
-                📅 {{ task.due_date }}
-              </span>
+              <span class="due-date">📅 {{ task.due_date }}</span>
             {% endif %}
           </div>
         </div>
-
-        <!-- Delete -->
-        <a href="/delete/{{ task.id }}" style="text-decoration:none;"
-           onclick="return confirm('Delete this task?')">
+        <a href="/delete/{{ task.id }}" style="text-decoration:none;" onclick="return confirm('Delete this task?')">
           <button class="delete-btn" title="Delete task">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
@@ -376,11 +284,9 @@
             </svg>
           </button>
         </a>
-
       </div>
       {% endfor %}
     </div>
-
   {% else %}
     <div class="empty-state">
       <div class="icon">✅</div>
