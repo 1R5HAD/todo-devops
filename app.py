@@ -269,6 +269,23 @@ def delete_task(task_id):
     db.session.commit()
     return redirect(url_for('index'))
 
+# ─── testmail ─────────────────────────────────────────────────────────────────
+
+@app.route('/test-email')
+@login_required
+def test_email():
+    try:
+        msg = Message(
+            subject="✅ TaskFlow — Test Email",
+            recipients=[current_user.email],
+            body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working correctly!\n\n— TaskFlow"
+        )
+        mail.send(msg)
+        return f"✅ Test email sent to {current_user.email} — check your inbox!"
+    except Exception as e:
+        return f"❌ Failed to send email: {str(e)}"
+
+
 
 # ─── STARTUP ──────────────────────────────────────────────────────────────────
 
