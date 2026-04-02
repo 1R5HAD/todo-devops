@@ -1,10 +1,10 @@
 import os
+import resend
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
@@ -20,17 +20,10 @@ if database_url.startswith('postgres://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ─── MAIL CONFIG ──────────────────────────────────────────────────────────────
-# These values come from environment variables — never hardcode credentials
-app.config['MAIL_SERVER']   = 'smtp.gmail.com'
-app.config['MAIL_PORT']     = 587
-app.config['MAIL_USE_TLS']  = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')  # your Gmail address
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # your Gmail App Password
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+# Resend API key — set this in Render environment variables
+resend.api_key = os.environ.get('RESEND_API_KEY', '')
 
-db   = SQLAlchemy(app)
-mail = Mail(app)
+db = SQLAlchemy(app)
 
 # ─── AUTH SETUP ───────────────────────────────────────────────────────────────
 
@@ -71,19 +64,35 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+# ─── EMAIL HELPER ─────────────────────────────────────────────────────────────
+
+def send_email(to, subject, body):
+    """Send an email using Resend API."""
+    try:
+        resend.Emails.send({
+            "from": "TaskFlow <onboarding@resend.dev>",  # Resend's free test sender
+            "to": to,
+            "subject": subject,
+            "text": body
+        })
+        print(f"[Email] Sent to {to}")
+        return True
+    except Exception as e:
+        print(f"[Email] Failed to send to {to}: {e}")
+        return False
+
+
 # ─── EMAIL NOTIFICATION JOB ───────────────────────────────────────────────────
 
 def send_due_reminders():
     """
-    Runs every day at 8AM.
-    Finds all incomplete tasks due in exactly 2 days
-    and emails the task owner a reminder.
+    Runs every day at 8AM IST.
+    Finds all incomplete tasks due in exactly 2 days and emails the owner.
     """
     with app.app_context():
-        # Calculate what date is 2 days from today
         target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
+        print(f"[Scheduler] Checking for tasks due on {target_date}")
 
-        # Find all incomplete tasks due on that date
         upcoming_tasks = Task.query.filter_by(
             due_date=target_date,
             completed=False
@@ -94,7 +103,6 @@ def send_due_reminders():
             return
 
         # Group tasks by user so each user gets one email
-        # instead of one email per task
         tasks_by_user = {}
         for task in upcoming_tasks:
             user = User.query.get(task.user_id)
@@ -103,19 +111,16 @@ def send_due_reminders():
                     tasks_by_user[user.id] = {'user': user, 'tasks': []}
                 tasks_by_user[user.id]['tasks'].append(task)
 
-        # Send one email per user
         for entry in tasks_by_user.values():
             user  = entry['user']
             tasks = entry['tasks']
 
-            # Build the task list as plain text for the email body
             task_lines = '\n'.join(
                 f"  • {t.content} [{t.priority.upper()} priority]"
                 for t in tasks
             )
 
             subject = f"⏰ Reminder: You have {len(tasks)} task{'s' if len(tasks) > 1 else ''} due in 2 days!"
-
             body = f"""Hi {user.username},
 
 This is a friendly reminder from TaskFlow.
@@ -130,34 +135,23 @@ Open your task list: https://todo-devops-jexx.onrender.com
 
 — TaskFlow
 """
-
-            try:
-                msg = Message(subject=subject, recipients=[user.email], body=body)
-                mail.send(msg)
-                print(f"[Scheduler] Reminder sent to {user.email} for {len(tasks)} task(s)")
-            except Exception as e:
-                print(f"[Scheduler] Failed to send email to {user.email}: {e}")
+            send_email(user.email, subject, body)
 
 
 # ─── SCHEDULER SETUP ──────────────────────────────────────────────────────────
 
 def start_scheduler():
-    """
-    APScheduler runs in a background thread alongside Flask.
-    It calls send_due_reminders() every day at 8:00 AM.
-    """
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         func=send_due_reminders,
         trigger='cron',
         hour=8,
-        minute=53,
+        minute=0,
+        timezone='Asia/Kolkata',    # fires at 8:00 AM IST every day
         id='due_reminder'
     )
     scheduler.start()
-    print("[Scheduler] Started — reminders will fire daily at 8:00 AM")
-
-    # Shut down the scheduler cleanly when the app exits
+    print("[Scheduler] Started — reminders fire daily at 8:00 AM IST")
     atexit.register(lambda: scheduler.shutdown())
 
 
@@ -269,28 +263,29 @@ def delete_task(task_id):
     db.session.commit()
     return redirect(url_for('index'))
 
-# ─── testmail ─────────────────────────────────────────────────────────────────
+
+# ─── TEST EMAIL ROUTE (remove before final submission) ────────────────────────
 
 @app.route('/test-email')
 @login_required
 def test_email():
-    try:
-        msg = Message(
-            subject="✅ TaskFlow — Test Email",
-            recipients=[current_user.email],
-            body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working correctly!\n\n— TaskFlow"
-        )
-        mail.send(msg)
+    success = send_email(
+        to=current_user.email,
+        subject="✅ TaskFlow — Test Email",
+        body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working!\n\n— TaskFlow"
+    )
+    if success:
         return f"✅ Test email sent to {current_user.email} — check your inbox!"
-    except Exception as e:
-        return f"❌ Failed to send email: {str(e)}"
-
+    else:
+        return f"❌ Failed to send email — check your RESEND_API_KEY on Render."
 
 
 # ─── STARTUP ──────────────────────────────────────────────────────────────────
 
+with app.app_context():
+    db.create_all()
+
+start_scheduler()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    start_scheduler()
     app.run(debug=True, host='0.0.0.0', port=5000)

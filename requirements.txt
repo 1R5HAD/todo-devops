@@ -3,5 +3,5 @@ Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Werkzeug==3.0.3
 psycopg2-binary==2.9.9
-Flask-Mail==0.10.0
 APScheduler==3.10.4
+resend==2.0.0
