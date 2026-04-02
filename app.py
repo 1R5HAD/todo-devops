@@ -1,10 +1,11 @@
 import os
-import resend
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
@@ -19,9 +20,6 @@ if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Resend API key — set this in Render environment variables
-resend.api_key = os.environ.get('RESEND_API_KEY', '')
 
 db = SQLAlchemy(app)
 
@@ -66,20 +64,41 @@ def load_user(user_id):
 
 # ─── EMAIL HELPER ─────────────────────────────────────────────────────────────
 
-def send_email(to, subject, body):
-    """Send an email using Resend API."""
+def send_email(to_email, to_name, subject, body):
+    """
+    Send an email using Brevo (formerly Sendinblue) HTTP API.
+    Works on Render free tier — uses HTTPS not SMTP.
+    """
     try:
-        resend.Emails.send({
-            "from": "TaskFlow <onboarding@resend.dev>",  # Resend's free test sender
-            "to": to,
-            "subject": subject,
-            "text": body
-        })
-        print(f"[Email] Sent to {to}")
-        return True
+        # Configure Brevo API key
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY', '')
+
+        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+            sib_api_v3_sdk.ApiClient(configuration)
+        )
+
+        sender_email = os.environ.get('BREVO_SENDER_EMAIL', '')
+        sender_name  = os.environ.get('BREVO_SENDER_NAME', 'TaskFlow')
+
+        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+            to=[{"email": to_email, "name": to_name}],
+            sender={"email": sender_email, "name": sender_name},
+            subject=subject,
+            text_content=body
+        )
+
+        api_instance.send_transac_email(send_smtp_email)
+        print(f"[Email] Sent to {to_email}")
+        return True, None
+
+    except ApiException as e:
+        error = f"Brevo API error: {e}"
+        print(f"[Email] Failed: {error}")
+        return False, error
     except Exception as e:
-        print(f"[Email] Failed to send to {to}: {e}")
-        return False
+        print(f"[Email] Failed: {e}")
+        return False, str(e)
 
 
 # ─── EMAIL NOTIFICATION JOB ───────────────────────────────────────────────────
@@ -99,10 +118,10 @@ def send_due_reminders():
         ).all()
 
         if not upcoming_tasks:
-            print(f"[Scheduler] No tasks due on {target_date}")
+            print(f"[Scheduler] No pending tasks due on {target_date}")
             return
 
-        # Group tasks by user so each user gets one email
+        # Group tasks by user — one email per user, not one per task
         tasks_by_user = {}
         for task in upcoming_tasks:
             user = User.query.get(task.user_id)
@@ -120,7 +139,7 @@ def send_due_reminders():
                 for t in tasks
             )
 
-            subject = f"⏰ Reminder: You have {len(tasks)} task{'s' if len(tasks) > 1 else ''} due in 2 days!"
+            subject = f"⏰ Reminder: {len(tasks)} task{'s' if len(tasks) > 1 else ''} due in 2 days!"
             body = f"""Hi {user.username},
 
 This is a friendly reminder from TaskFlow.
@@ -135,7 +154,7 @@ Open your task list: https://todo-devops-jexx.onrender.com
 
 — TaskFlow
 """
-            send_email(user.email, subject, body)
+            send_email(user.email, user.username, subject, body)
 
 
 # ─── SCHEDULER SETUP ──────────────────────────────────────────────────────────
@@ -147,7 +166,7 @@ def start_scheduler():
         trigger='cron',
         hour=8,
         minute=0,
-        timezone='Asia/Kolkata',    # fires at 8:00 AM IST every day
+        timezone='Asia/Kolkata',    # 8:00 AM IST every day
         id='due_reminder'
     )
     scheduler.start()
@@ -269,15 +288,16 @@ def delete_task(task_id):
 @app.route('/test-email')
 @login_required
 def test_email():
-    success = send_email(
-        to=current_user.email,
+    success, error = send_email(
+        to_email=current_user.email,
+        to_name=current_user.username,
         subject="✅ TaskFlow — Test Email",
-        body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working!\n\n— TaskFlow"
+        body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working correctly!\n\n— TaskFlow"
     )
     if success:
         return f"✅ Test email sent to {current_user.email} — check your inbox!"
     else:
-        return f"❌ Failed to send email — check your RESEND_API_KEY on Render."
+        return f"❌ Failed: {error}"
 
 
 # ─── STARTUP ──────────────────────────────────────────────────────────────────

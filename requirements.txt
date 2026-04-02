@@ -4,4 +4,4 @@ Flask-Login==0.6.3
 Werkzeug==3.0.3
 psycopg2-binary==2.9.9
 APScheduler==3.10.4
-resend==2.0.0
+sib-api-v3-sdk==7.6.0
