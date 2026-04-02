@@ -146,16 +146,18 @@ def start_scheduler():
     APScheduler runs in a background thread alongside Flask.
     It calls send_due_reminders() every day at 8:00 AM.
     """
+    from datetime import datetime, timedelta
+    run_time = datetime.now() + timedelta(minutes=3)
+
     scheduler = BackgroundScheduler()
     scheduler.add_job(
         func=send_due_reminders,
-        trigger='cron',
-        hour=8,
-        minute=0,
+        trigger='date',
+        run_date=run_time,
         id='due_reminder'
     )
     scheduler.start()
-    print("[Scheduler] Started — reminders will fire daily at 8:00 AM")
+    print("[Scheduler] Started — reminder update in 3 min")
 
     # Shut down the scheduler cleanly when the app exits
     atexit.register(lambda: scheduler.shutdown())
