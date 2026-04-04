@@ -65,12 +65,8 @@ def load_user(user_id):
 # ─── EMAIL HELPER ─────────────────────────────────────────────────────────────
 
 def send_email(to_email, to_name, subject, body):
-    """
-    Send an email using Brevo (formerly Sendinblue) HTTP API.
-    Works on Render free tier — uses HTTPS not SMTP.
-    """
+    """Send an email via Brevo HTTP API — works on Render free tier."""
     try:
-        # Configure Brevo API key
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY', '')
 
@@ -78,52 +74,124 @@ def send_email(to_email, to_name, subject, body):
             sib_api_v3_sdk.ApiClient(configuration)
         )
 
-        sender_email = os.environ.get('BREVO_SENDER_EMAIL', '')
-        sender_name  = os.environ.get('BREVO_SENDER_NAME', 'TaskFlow')
-
         send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
             to=[{"email": to_email, "name": to_name}],
-            sender={"email": sender_email, "name": sender_name},
+            sender={
+                "email": os.environ.get('BREVO_SENDER_EMAIL', ''),
+                "name":  os.environ.get('BREVO_SENDER_NAME', 'TaskFlow')
+            },
             subject=subject,
             text_content=body
         )
 
         api_instance.send_transac_email(send_smtp_email)
-        print(f"[Email] Sent to {to_email}")
+        print(f"[Email] ✅ Sent to {to_email}: {subject}")
         return True, None
 
     except ApiException as e:
         error = f"Brevo API error: {e}"
-        print(f"[Email] Failed: {error}")
+        print(f"[Email] ❌ {error}")
         return False, error
     except Exception as e:
-        print(f"[Email] Failed: {e}")
+        print(f"[Email] ❌ {e}")
         return False, str(e)
 
 
-# ─── EMAIL NOTIFICATION JOB ───────────────────────────────────────────────────
+# ─── REAL-TIME NOTIFICATION ON TASK CREATION ─────────────────────────────────
 
-def send_due_reminders():
+def notify_if_urgent(task, user):
     """
-    Runs every day at 8AM IST.
-    Finds all incomplete tasks due in exactly 2 days and emails the owner.
+    Called immediately after a HIGH priority task is created.
+    Sends an email right away if due date is 1 or 2 days from today.
+    """
+    if task.priority != 'high' or not task.due_date:
+        return  # Only notify for high priority tasks with a due date
+
+    try:
+        due    = date.fromisoformat(task.due_date)  # parse "YYYY-MM-DD"
+        today  = date.today()
+        days_remaining = (due - today).days
+    except ValueError:
+        return  # Invalid date format — skip
+
+    if days_remaining == 2:
+        subject = f"⚠️ High Priority Task due in 2 days!"
+        body = f"""Hi {user.username},
+
+You have a HIGH priority task due in 2 days ({task.due_date}):
+
+  📌 {task.content}
+
+Make sure you complete it on time!
+
+Open TaskFlow: https://todo-devops-jexx.onrender.com
+
+— TaskFlow
+"""
+        send_email(user.email, user.username, subject, body)
+
+    elif days_remaining == 1:
+        subject = f"🚨 High Priority Task due TOMORROW!"
+        body = f"""Hi {user.username},
+
+Urgent reminder — your HIGH priority task is due TOMORROW ({task.due_date}):
+
+  📌 {task.content}
+
+Don't leave it for the last minute!
+
+Open TaskFlow: https://todo-devops-jexx.onrender.com
+
+— TaskFlow
+"""
+        send_email(user.email, user.username, subject, body)
+
+    elif days_remaining == 0:
+        subject = f"🔴 High Priority Task due TODAY!"
+        body = f"""Hi {user.username},
+
+Your HIGH priority task is due TODAY ({task.due_date}):
+
+  📌 {task.content}
+
+Complete it as soon as possible!
+
+Open TaskFlow: https://todo-devops-jexx.onrender.com
+
+— TaskFlow
+"""
+        send_email(user.email, user.username, subject, body)
+
+    else:
+        print(f"[Notify] Task '{task.content}' due in {days_remaining} days — no immediate email needed")
+
+
+# ─── MIDNIGHT SCHEDULER — DAY-BEFORE FOLLOW-UP ───────────────────────────────
+
+def midnight_check():
+    """
+    Runs every day at midnight IST.
+    Finds HIGH priority incomplete tasks that are now exactly 1 day away
+    (i.e. they were added when 2 days remained, now 1 day remains).
+    Sends a follow-up reminder.
     """
     with app.app_context():
-        target_date = (date.today() + timedelta(days=2)).strftime('%Y-%m-%d')
-        print(f"[Scheduler] Checking for tasks due on {target_date}")
+        tomorrow = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
+        print(f"[Scheduler] Midnight check — looking for HIGH priority tasks due on {tomorrow}")
 
-        upcoming_tasks = Task.query.filter_by(
-            due_date=target_date,
+        urgent_tasks = Task.query.filter_by(
+            due_date=tomorrow,
+            priority='high',
             completed=False
         ).all()
 
-        if not upcoming_tasks:
-            print(f"[Scheduler] No pending tasks due on {target_date}")
+        if not urgent_tasks:
+            print(f"[Scheduler] No urgent tasks due tomorrow")
             return
 
-        # Group tasks by user — one email per user, not one per task
+        # Group by user — one email per user
         tasks_by_user = {}
-        for task in upcoming_tasks:
+        for task in urgent_tasks:
             user = User.query.get(task.user_id)
             if user:
                 if user.id not in tasks_by_user:
@@ -134,23 +202,20 @@ def send_due_reminders():
             user  = entry['user']
             tasks = entry['tasks']
 
-            task_lines = '\n'.join(
-                f"  • {t.content} [{t.priority.upper()} priority]"
-                for t in tasks
-            )
+            task_lines = '\n'.join(f"  📌 {t.content}" for t in tasks)
 
-            subject = f"⏰ Reminder: {len(tasks)} task{'s' if len(tasks) > 1 else ''} due in 2 days!"
+            subject = f"🚨 {len(tasks)} High Priority task{'s' if len(tasks) > 1 else ''} due TOMORROW!"
             body = f"""Hi {user.username},
 
-This is a friendly reminder from TaskFlow.
+This is your follow-up reminder from TaskFlow.
 
-The following task{'s' if len(tasks) > 1 else ''} {'are' if len(tasks) > 1 else 'is'} due on {target_date}:
+The following HIGH priority task{'s are' if len(tasks) > 1 else ' is'} due TOMORROW ({tomorrow}):
 
 {task_lines}
 
-Don't forget to complete {'them' if len(tasks) > 1 else 'it'} on time!
+Make sure you complete {'them' if len(tasks) > 1 else 'it'} today!
 
-Open your task list: https://todo-devops-jexx.onrender.com
+Open TaskFlow: https://todo-devops-jexx.onrender.com
 
 — TaskFlow
 """
@@ -162,15 +227,15 @@ Open your task list: https://todo-devops-jexx.onrender.com
 def start_scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(
-        func=send_due_reminders,
+        func=midnight_check,
         trigger='cron',
-        hour=8,
+        hour=0,
         minute=0,
-        timezone='Asia/Kolkata',    # 8:00 AM IST every day
-        id='due_reminder'
+        timezone='Asia/Kolkata',    # midnight IST
+        id='midnight_reminder'
     )
     scheduler.start()
-    print("[Scheduler] Started — reminders fire daily at 8:00 AM IST")
+    print("[Scheduler] Started — midnight check active (IST)")
     atexit.register(lambda: scheduler.shutdown())
 
 
@@ -262,6 +327,11 @@ def add_task():
     )
     db.session.add(new_task)
     db.session.commit()
+
+    # ── Real-time notification ──────────────────────────────
+    # Check immediately after saving — no waiting for a scheduler
+    notify_if_urgent(new_task, current_user)
+
     return redirect(url_for('index'))
 
 
@@ -292,7 +362,7 @@ def test_email():
         to_email=current_user.email,
         to_name=current_user.username,
         subject="✅ TaskFlow — Test Email",
-        body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nIf you received this, your email setup is working correctly!\n\n— TaskFlow"
+        body=f"Hi {current_user.username},\n\nThis is a test email from TaskFlow.\n\nYour email notifications are working correctly!\n\n— TaskFlow"
     )
     if success:
         return f"✅ Test email sent to {current_user.email} — check your inbox!"

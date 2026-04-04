@@ -8,7 +8,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:        #000000;
+      --bg:        #0f1117;
       --surface:   #1a1d27;
       --surface2:  #22263a;
       --border:    #2e3150;
@@ -41,7 +41,6 @@
     .header-left h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; }
     .header-left h1 span { color: var(--accent); }
     .header-left p { color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
-
     .user-pill {
       display: flex;
       align-items: center;
@@ -56,68 +55,58 @@
       background: var(--accent);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #fff;
+      font-size: 0.75rem; font-weight: 700; color: #fff;
     }
     .user-pill span { font-size: 0.85rem; font-weight: 500; }
-    .user-pill a {
-      color: var(--muted);
-      font-size: 0.78rem;
-      text-decoration: none;
-      margin-left: 0.2rem;
-      transition: color 0.2s;
-    }
+    .user-pill a { color: var(--muted); font-size: 0.78rem; text-decoration: none; margin-left: 0.2rem; transition: color 0.2s; }
     .user-pill a:hover { color: var(--high); }
 
     /* ── STATS ── */
     .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem;
-      text-align: center;
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem; text-align: center;
     }
     .stat-card .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
     .stat-card .label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* ── FORM ── */
     .add-form {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      margin-bottom: 1.5rem; box-shadow: var(--shadow);
     }
     .add-form h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
-    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-start; }
+
     input[type="text"], input[type="date"], select {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.9rem;
-      padding: 0.65rem 0.9rem;
-      outline: none;
-      transition: border-color 0.2s;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 0.9rem;
+      padding: 0.65rem 0.9rem; outline: none; transition: border-color 0.2s;
     }
     input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: var(--accent); }
     input[type="text"] { flex: 1; min-width: 180px; }
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
     select option { background: var(--surface2); }
+
+    /* Priority wrapper — select + note stacked */
+    .priority-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .priority-note {
+      display: none;   /* shown by JS when High is selected */
+      font-size: 0.7rem;
+      color: var(--high);
+      background: rgba(255,83,112,0.08);
+      border: 1px solid rgba(255,83,112,0.2);
+      border-radius: 6px;
+      padding: 3px 8px;
+      white-space: nowrap;
+    }
+
     .btn {
-      padding: 0.65rem 1.4rem;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
+      padding: 0.65rem 1.4rem; border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
     }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--accent); color: #fff; }
@@ -127,23 +116,15 @@
     .section-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.75rem; }
     .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
     .task-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem 1.2rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.2rem;
+      display: flex; align-items: flex-start; gap: 1rem;
+      position: relative; overflow: hidden;
       transition: border-color 0.2s, opacity 0.2s;
     }
     .task-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 4px;
-      border-radius: 12px 0 0 12px;
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; border-radius: 12px 0 0 12px;
     }
     .task-card.priority-high::before   { background: var(--high); }
     .task-card.priority-medium::before { background: var(--medium); }
@@ -152,14 +133,10 @@
     .task-card.completed .task-content { text-decoration: line-through; color: var(--muted); }
 
     .complete-btn {
-      width: 22px; height: 22px; min-width: 22px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: transparent;
-      cursor: pointer;
+      width: 22px; height: 22px; min-width: 22px; border-radius: 50%;
+      border: 2px solid var(--border); background: transparent; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s, border-color 0.2s;
-      margin-top: 2px;
+      transition: background 0.2s, border-color 0.2s; margin-top: 2px;
     }
     .complete-btn:hover { border-color: var(--accent); }
     .task-card.completed .complete-btn { background: var(--accent); border-color: var(--accent); }
@@ -176,15 +153,10 @@
     .due-date { font-size: 0.75rem; color: var(--muted); display: flex; align-items: center; gap: 3px; }
 
     .delete-btn {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; padding: 4px; border-radius: 6px;
       transition: color 0.2s, background 0.2s;
-      display: flex; align-items: center;
-      margin-top: 1px;
+      display: flex; align-items: center; margin-top: 1px;
     }
     .delete-btn:hover { color: var(--high); background: rgba(255,83,112,0.1); }
 
@@ -221,18 +193,9 @@
   {% set done      = tasks | selectattr('completed') | list | length %}
   {% set remaining = total - done %}
   <div class="stats">
-    <div class="stat-card">
-      <div class="num">{{ total }}</div>
-      <div class="label">Total</div>
-    </div>
-    <div class="stat-card">
-      <div class="num">{{ remaining }}</div>
-      <div class="label">Pending</div>
-    </div>
-    <div class="stat-card">
-      <div class="num">{{ done }}</div>
-      <div class="label">Completed</div>
-    </div>
+    <div class="stat-card"><div class="num">{{ total }}</div><div class="label">Total</div></div>
+    <div class="stat-card"><div class="num">{{ remaining }}</div><div class="label">Pending</div></div>
+    <div class="stat-card"><div class="num">{{ done }}</div><div class="label">Completed</div></div>
   </div>
 
   <!-- Add Task Form -->
@@ -241,11 +204,19 @@
     <form action="/add" method="POST">
       <div class="form-row">
         <input type="text" name="content" placeholder="What needs to be done?" autocomplete="off" required/>
-        <select name="priority">
-          <option value="high">🔴 High</option>
-          <option value="medium" selected>🟡 Medium</option>
-          <option value="low">🟢 Low</option>
-        </select>
+
+        <!-- Priority selector with High reminder note -->
+        <div class="priority-wrapper">
+          <select name="priority" id="prioritySelect">
+            <option value="high">🔴 High</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+          <span class="priority-note" id="priorityNote">
+            📧 You'll be emailed if due in ≤2 days
+          </span>
+        </div>
+
         <input type="date" name="due_date" />
         <button type="submit" class="btn btn-primary">+ Add</button>
       </div>
@@ -295,5 +266,19 @@
   {% endif %}
 
 </div>
+
+<script>
+  // Show the email reminder note only when High priority is selected
+  const select = document.getElementById('prioritySelect');
+  const note   = document.getElementById('priorityNote');
+
+  function updateNote() {
+    note.style.display = select.value === 'high' ? 'block' : 'none';
+  }
+
+  select.addEventListener('change', updateNote);
+  updateNote(); // run on page load in case High is pre-selected
+</script>
+
 </body>
 </html>
