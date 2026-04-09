@@ -245,19 +245,6 @@ This ensures broken code **never reaches production**.
 
 ---
 
-## 👥 Authors
-
-| Name | USN |
-|---|---|
-| Irshad Ahmad S | 1BG23CS051 |
-| Danish Sidiq Rather | 1BG23CS037 |
-
-**Institution:** B.N.M. Institute of Technology, Bengaluru
-**Department:** Computer Science and Engineering
-**Course:** DevOps (25CSE1663) — Semester 6
-
----
-
 ## 📄 License
 
 This project is built for academic purposes as part of the DevOps course at BNMIT.
